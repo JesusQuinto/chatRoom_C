@@ -1,3 +1,10 @@
+/*
+    ---cliente---------------------------------
+    Integrantes:
+    Jesus Miguel Quinto Teran C.I = 25619081
+    Edgar Joseph Rivero Matheus C.I = 20428267
+*/
+
 #include <stdio.h> 
 #include <string.h>    
 #include <sys/socket.h>  
@@ -10,7 +17,7 @@
 
 pthread_t hilo;
 int sock;
-int state = 1;
+int estado = 1;
 
 void uso()
 {
@@ -19,7 +26,6 @@ void uso()
   exit(0);
 }
 
-/* Strip CRLF */
 void strip_newline(char *s){
     while(*s != '\0')
     {
@@ -41,14 +47,14 @@ void *observar(){
         strip_newline(buff_in);
         
         //Captura de opciones
-        if(buff_in[0] == '\\')
+        if(buff_in[0] == '#')
         {
             char *command;
             command = strtok(buff_in," ");
 
-            if(!strcmp(command, "\\SALIR"))
+            if(!strcmp(command, "#SALIR"))
             {
-                state = 0;
+                estado = 0;
                 break;
             }
         }  
@@ -90,12 +96,27 @@ int main(int argc , char *argv[])
             return 1;
         }
          
-        puts("Conectado\n");
-         
+        puts("Conectado\n");  
         
         pthread_create(&hilo,NULL,( void *)&observar,NULL) ;
 
-        while(state)
+
+        char name[32];
+        printf("Ingrese su nombre:\n");
+        fgets(name, 31, stdin);
+
+        char newName[1000] = "#NOMBRE ";
+        strcat(newName, name);
+
+        //Enviar Nombre
+        if( send(sock,newName,strlen(newName),0) < 0)
+        {
+            puts("Envio Fallido");
+            return 1;
+        }
+
+
+        while(estado)
         {
             printf("\n");
             fgets(message, 1000, stdin);

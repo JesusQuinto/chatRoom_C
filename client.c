@@ -1,17 +1,23 @@
-#include<stdio.h> //printf
-#include<string.h>    //strlen
-#include<sys/socket.h>    //socket
-#include<arpa/inet.h> //inet_addr
-#include<stdlib.h>
-#include<unistd.h>
-#include<netinet/in.h>
-#include<netdb.h>
-
-#include<pthread.h>
+#include <stdio.h> 
+#include <string.h>    
+#include <sys/socket.h>  
+#include <arpa/inet.h> 
+#include <stdlib.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <pthread.h>
 
 pthread_t hilo;
 int sock;
 int state = 1;
+
+void uso()
+{
+  printf("Uso\n");
+  printf("    cliente [port]\n");
+  exit(0);
+}
 
 /* Strip CRLF */
 void strip_newline(char *s){
@@ -33,76 +39,79 @@ void *observar(){
     {
         buff_in[rlen] = '\0';
         strip_newline(buff_in);
-        puts(buff_in);
-
-        /* Special options */
+        
+        //Captura de opciones
         if(buff_in[0] == '\\')
         {
-            char *command, *param;
+            char *command;
             command = strtok(buff_in," ");
 
-            if(!strcmp(command, "\\QUIT"))
+            if(!strcmp(command, "\\SALIR"))
             {
                 state = 0;
                 break;
             }
-            else
-            {
-                puts("Server reply :");
-                puts(buff_in);
-            }
-        }   
+        }  
+
+        puts(buff_in); 
     }
     pthread_exit((void*)(1));
 }
  
 int main(int argc , char *argv[])
 {
+    if (argc < 2)
+    {
+        uso();    
+    }
+    
+        int port = (atoi(argv[1]));
+        printf("%d\n",port);
+
         struct sockaddr_in server;
         char message[1000];
-         
-        //Create socket
+        system("clear");
+
+        //Crear socket
         sock = socket(AF_INET , SOCK_STREAM , 0);
         if (sock == -1)
         {
-            printf("Could not create socket");
+            printf("No se puede crear el socket");
         }
-        puts("Socket created");
+        puts("Socket Creado");
          
         server.sin_addr.s_addr = inet_addr("127.0.0.1");
         server.sin_family = AF_INET;
-        server.sin_port = htons( 5000 );
+        server.sin_port = htons(port);
  
-        //Connect to remote server
         if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
         {
-                perror("connect failed. Error");
-                return 1;
+            perror("Conexion Fallida. Error");
+            return 1;
         }
          
-        puts("Connected\n");
+        puts("Conectado\n");
          
         
         pthread_create(&hilo,NULL,( void *)&observar,NULL) ;
 
-        do
+        while(state)
         {
-            printf("Enter message : ");
-            scanf("%s" , message);
+            printf("\n");
+            fgets(message, 1000, stdin);
              
-            //Send some data
+            //Enviar Mensaje
             if( send(sock , message , strlen(message) , 0) < 0)
             {
-                puts("Send failed");
+                puts("Envio Fallido");
                 return 1;
             }
             sleep(1);
         }
-        while(state);
 
-        printf("Adios\n");
-
-         
         close(sock);
+        system("clear");
+        printf("Adios\n");
+         
         return 0;
 }

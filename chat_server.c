@@ -34,7 +34,13 @@ typedef struct {
 
 client_t *clients[MAX_CLIENTS];
 
-/* Add client to queue */
+void uso()
+{
+  printf("Uso:\n");
+  printf("    servidor [port]\n");
+  exit(0);
+}
+
 void queue_add(client_t *cl)
 {
 	int i;
@@ -48,7 +54,6 @@ void queue_add(client_t *cl)
 	}
 }
 
-/* Delete client from queue */
 void queue_delete(int uid){
 	int i;
 	for(i=0;i<MAX_CLIENTS;i++)
@@ -64,7 +69,6 @@ void queue_delete(int uid){
 	}
 }
 
-/* Send message to all clients but the sender */
 void send_message(char *s, int uid){
 	int i;
 	for(i=0;i<MAX_CLIENTS;i++)
@@ -84,7 +88,6 @@ void send_message(char *s, int uid){
 	}
 }
 
-/* Send message to all clients */
 void send_message_all(char *s){
 	int i;
 	for(i=0;i<MAX_CLIENTS;i++)
@@ -100,7 +103,6 @@ void send_message_all(char *s){
 	}
 }
 
-/* Send message to sender */
 void send_message_self(const char *s, int connfd)
 {
 	//write(connfd, s, strlen(s));
@@ -110,7 +112,6 @@ void send_message_self(const char *s, int connfd)
     }
 }
 
-/* Send message to client */
 void send_message_client(char *s, int uid){
 	int i;
 	for(i=0;i<MAX_CLIENTS;i++)
@@ -129,7 +130,6 @@ void send_message_client(char *s, int uid){
 	}
 }
 
-/* Send list of active clients */
 void send_active_clients(int connfd){
 	int i;
 	char s[64];
@@ -143,7 +143,6 @@ void send_active_clients(int connfd){
 	}
 }
 
-/* Strip CRLF */
 void strip_newline(char *s){
 	while(*s != '\0')
 	{
@@ -155,14 +154,6 @@ void strip_newline(char *s){
 	}
 }
 
-/* Print ip address */
-void print_client_addr(struct sockaddr_in addr){
-	printf("%d.%d.%d.%d",
-		addr.sin_addr.s_addr & 0xFF,
-		(addr.sin_addr.s_addr & 0xFF00)>>8,
-		(addr.sin_addr.s_addr & 0xFF0000)>>16,
-		(addr.sin_addr.s_addr & 0xFF000000)>>24);
-}
 
 /* Handle all communication with the client */
 void *handle_client(void *arg){
@@ -174,11 +165,7 @@ void *handle_client(void *arg){
 	client_t *cli = (client_t *)arg;
 
 	printf("<<ACCEPT ");
-	print_client_addr(cli->addr);
 	printf(" REFERENCED BY %d\n", cli->uid);
-
-	sprintf(buff_out, "<<JOIN, HELLO %s\r\n", cli->name);
-	send_message_all(buff_out);
 
 	/* Receive input from client */
 	while((rlen = read(cli->connfd, buff_in, sizeof(buff_in)-1)) > 0){
@@ -196,8 +183,8 @@ void *handle_client(void *arg){
 		{
 			char *command, *param;
 			command = strtok(buff_in," ");
-			if(!strcmp(command, "\\QUIT")){
-				send_message_self("\\QUIT", cli->connfd);
+			if(!strcmp(command, "\\SALIR")){
+				send_message_self("\\SALIR", cli->connfd);
 				break;
 			}else if(!strcmp(command, "\\PING")){
 				send_message_self("<<PONG\r\n", cli->connfd);
@@ -232,11 +219,13 @@ void *handle_client(void *arg){
 				}else{
 					send_message_self("<<REFERENCE CANNOT BE NULL\r\n", cli->connfd);
 				}
-			}else if(!strcmp(command, "\\ACTIVE")){
+			}else if(!strcmp(command, "\\ACTIVE"))
+			{
 				sprintf(buff_out, "<<CLIENTS %d\r\n", cli_count);
 				send_message_self(buff_out, cli->connfd);
 				send_active_clients(cli->connfd);
-			}else if(!strcmp(command, "\\HELP")){
+			}else if(!strcmp(command, "\\HELP"))
+			{
 				strcat(buff_out, "\\QUIT     Quit chatroom\r\n");
 				strcat(buff_out, "\\PING     Server test\r\n");
 				strcat(buff_out, "\\NAME     <name> Change nickname\r\n");
@@ -244,7 +233,9 @@ void *handle_client(void *arg){
 				strcat(buff_out, "\\ACTIVE   Show active clients\r\n");
 				strcat(buff_out, "\\HELP     Show help\r\n");
 				send_message_self(buff_out, cli->connfd);
-			}else{
+			}
+			else
+			{
 				send_message_self("<<UNKOWN COMMAND\r\n", cli->connfd);
 			}
 		}else{
@@ -262,7 +253,6 @@ void *handle_client(void *arg){
 	/* Delete client from queue and yeild thread */
 	queue_delete(cli->uid);
 	printf("<<LEAVE ");
-	print_client_addr(cli->addr);
 	printf(" REFERENCED BY %d\n", cli->uid);
 	free(cli);
 	cli_count--;
@@ -271,46 +261,60 @@ void *handle_client(void *arg){
 	return NULL;
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
+    if (argc < 2)
+    {
+        uso();    
+    }
+
 	int listenfd = 0, connfd = 0;
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr;
 	pthread_t tid;
 
-	/* Socket settings */
+	int port = (atoi(argv[1]));
+
+	//Configuracion del Sokect
 	listenfd = socket(AF_INET, SOCK_STREAM, 0);
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	serv_addr.sin_port = htons(5000); 
+	serv_addr.sin_port = htons(port); 
 
-	/* Ignore pipe signals */
+	printf("%d\n",atoi(argv[1]));
+
+	//Remover Senal SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 	
-	/* Bind */
-	if(bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+	//Enlace
+	if (bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
+	{
 		perror("Socket binding failed");
 		return 1;
 	}
 
-	/* Listen */
-	if(listen(listenfd, 10) < 0){
+	//Listar
+	if (listen(listenfd, 10) < 0)
+	{
 		perror("Socket listening failed");
 		return 1;
 	}
 
-	printf("<[SERVER STARTED]>\n");
+	printf("Servidor Iniciado\n");
+	printf("Host: 127.0.0.1\n");
+	printf("Port: %d\n",port);
 
-	/* Accept clients */
-	while(1){
+	//Aceptar clientes
+	while(1)
+	{
 		socklen_t clilen = sizeof(cli_addr);
 		connfd = accept(listenfd, (struct sockaddr*)&cli_addr, &clilen);
 
 		/* Check if max clients is reached */
-		if((cli_count+1) == MAX_CLIENTS){
+		if((cli_count+1) == MAX_CLIENTS)
+		{
 			printf("<<MAX CLIENTS REACHED\n");
-			printf("<<REJECT ");
-			print_client_addr(cli_addr);
-			printf("\n");
+			printf("<<REJECT\n");
 			close(connfd);
 			continue;
 		}

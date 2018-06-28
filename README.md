@@ -1,6 +1,6 @@
 # Sala de chat
 
-*Sala de chat* hecha en C que con la implementacion de **sockets** se logra crear una sala de chat, en la cual distintos **clientes** se comunican a travéz de un **servidor**, se implementa el manejo de **señales** para ignorar *SIGPIPE* señales, y el uso de **hilos** en el servidor para procesar multiple de usuarios a la vez, lo cual nos genera una **seccion critica** la cual terminamos manejando mendiante un **semaforo**.
+*Sala de chat* hecha en C que con la implementación de **sockets** se logra crear una sala de chat, en la cual distintos **clientes** se comunican a travéz de un **servidor**, se implementa el manejo de **señales** para ignorar *SIGPIPE* señales. El uso de hilos en el cliente para recibir mensajes y en el servidor para procesar múltiples usuarios a la vez, lo cual nos genera una **sección critica** la cual terminamos manejando mendiante un **semáforo**.
 
 ## Este sofware fue probado en Ordenador:
 

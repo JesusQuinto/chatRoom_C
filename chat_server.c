@@ -89,7 +89,8 @@ void send_message_all(char *s){
 	int i;
 	for(i=0;i<MAX_CLIENTS;i++)
 	{
-		if(clients[i]){
+		if(clients[i])
+		{
 			//write(clients[i]->connfd, s, strlen(s));
 		    if( send(clients[i]->connfd , s , strlen(s) , 0) < 0)
 	        {
@@ -103,7 +104,7 @@ void send_message_all(char *s){
 void send_message_self(const char *s, int connfd)
 {
 	//write(connfd, s, strlen(s));
-    if( send(clients[i]->connfd , s , strlen(s) , 0) < 0)
+    if( send(connfd , s , strlen(s) , 0) < 0)
 	{
         puts("Send failed");
     }
@@ -191,10 +192,12 @@ void *handle_client(void *arg){
 		}
 	
 		/* Special options */
-		if(buff_in[0] == '\\'){
+		if(buff_in[0] == '\\')
+		{
 			char *command, *param;
 			command = strtok(buff_in," ");
 			if(!strcmp(command, "\\QUIT")){
+				send_message_self("\\QUIT", cli->connfd);
 				break;
 			}else if(!strcmp(command, "\\PING")){
 				send_message_self("<<PONG\r\n", cli->connfd);
@@ -254,7 +257,7 @@ void *handle_client(void *arg){
 	/* Close connection */
 	close(cli->connfd);
 	sprintf(buff_out, "<<LEAVE, BYE %s\r\n", cli->name);
-	send_message_all(buff_out);
+	send_message(buff_out, cli->uid);
 
 	/* Delete client from queue and yeild thread */
 	queue_delete(cli->uid);

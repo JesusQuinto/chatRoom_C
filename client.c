@@ -8,15 +8,22 @@
 #include<netdb.h>
 
 void observar(){
+   while(1)
+    {
+        if( recv(sock , server_reply , 2000 , 0) < 0)
+        {
+            puts("recv failed");
+            break;
+        }
 
-  if( recv(sock , server_reply , 2000 , 0) < 0)
-  {
-      puts("recv failed");
-      break;
-  }
-  
-  puts("Server reply :");
-  puts(server_reply);
+        if (!strcmp(server_reply, "\\QUIT"))
+        {
+          break;
+        }
+        puts("Server reply :");
+        puts(server_reply);
+    }
+    pthread_exit() ;
 }
  
 int main(int argc , char *argv[])

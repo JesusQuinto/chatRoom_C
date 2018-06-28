@@ -17,11 +17,13 @@
 #include <sys/types.h>
 #include <signal.h>
 #include <semaphore.h>
+#include <stdlib.h>
 
 #define limiteMaximo	50
 
-//Variable de Seccion Critica
-static unsigned int cli_count = 0;
+//Variable de Seccion Critica//////////
+static unsigned int cli_count = 0;   //
+///////////////////////////////////////
 
 static int uid = 10;
 sem_t sem1;
@@ -39,7 +41,7 @@ client_t *clients[limiteMaximo];
 void uso()
 {
   printf("Uso:\n");
-  printf("    servidor [port]\n");
+  printf("    server [port]\n");
   exit(0);
 }
 
@@ -71,6 +73,7 @@ void queue_delete(int uid)
 		}
 	}
 }
+
 
 void send_message(char *s, int uid)
 {
@@ -135,11 +138,12 @@ void send_active_clients(int connfd)
 {
 	int i;
 	char s[64];
+
 	for(i=0;i<limiteMaximo;i++)
 	{
 		if(clients[i])
 		{
-			sprintf(s, "<<CLIENT %d | %s\r\n", clients[i]->uid, clients[i]->name);
+			sprintf(s, "CLIENTES %d | %s\r\n", clients[i]->uid, clients[i]->name);
 			send_message_self(s, connfd);
 		}
 	}
@@ -164,6 +168,7 @@ void *gClient(void *arg)
 	char buff_in[1024];
 	int rlen;
 
+
 	//Seccion Critica controlada por un semaforo//////
 		sem_wait(&sem1);							//
 		cli_count++;    							//
@@ -172,7 +177,7 @@ void *gClient(void *arg)
 
 	client_t *cli = (client_t *)arg;
 
-	printf("[%d] Se ha conectado al chat\n", cli->uid);
+	printf("[%d] ESTA CONECTADO AL CHAT\n", cli->uid);
 
 	/* Receive input from client */
 	while((rlen = read(cli->connfd, buff_in, sizeof(buff_in)-1)) > 0)
@@ -215,15 +220,7 @@ void *gClient(void *arg)
 					send_message_self("El nombre no debe ser vacio\r\n", cli->connfd);
 				}
 			}
-
-			else if(!strcmp(command, "#HISTORIAL"))
-			{
-				sprintf(buff_out, "<<CLIENTS %d\r\n", cli_count);
-				send_message_self(buff_out, cli->connfd);
-				send_active_clients(cli->connfd);
-			}
-
-			
+	
 			else if(!strcmp(command, "#ACTIVOS"))
 			{
 				sprintf(buff_out, "Clientes: %d\r\n", cli_count);
@@ -234,7 +231,6 @@ void *gClient(void *arg)
 			else if(!strcmp(command, "#AYUDA"))
 			{
 				strcat(buff_out, "#SALIR     Salirce del chat\r\n");
-				strcat(buff_out, "#HISTORIAL   Mostrar Historial\r\n");
 				strcat(buff_out, "#NOMBRE     <name> Cambia el Nombre\r\n");
 				strcat(buff_out, "#ACTIVOS   Mostrar los Cliente Activos\r\n");
 				strcat(buff_out, "#AYUDA     Mostrar Ayuda\r\n");
@@ -257,12 +253,12 @@ void *gClient(void *arg)
 
 	//Cerrar Conexion
 	close(cli->connfd);
-	sprintf(buff_out, "[%s] Ha salido del chat\r\n", cli->name);
+	sprintf(buff_out, "[%s] HA SALIDO DEL CHAT\r\n", cli->name);
 	send_message(buff_out, cli->uid);
 
 	//Eliminar Cliente
 	queue_delete(cli->uid);
-	printf("[%d] ha abandonado\n", cli->uid);
+	printf("->[%d] HA ABANDONADO\n", cli->uid);
 	free(cli);
 
 	//Seccion Critica controlada por un semaforo//////
@@ -278,11 +274,13 @@ void *gClient(void *arg)
 
 int main(int argc, char *argv[])
 {
+    system("clear");
+
     if (argc < 2)
     {
         uso();    
     }
-
+   	
     //Inicializacion del semaforo
     // sem_init(referencia, compartido entre proceosos, valor de inicializacion);
     sem_init(&sem1, 0, 1);
@@ -300,28 +298,26 @@ int main(int argc, char *argv[])
 	serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	serv_addr.sin_port = htons(port); 
 
-	printf("%d\n",atoi(argv[1]));
-
 	//Remover Senal SIGPIPE
 	signal(SIGPIPE, SIG_IGN);
 	
 	//Enlace
 	if (bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
 	{
-		perror("Erro en bind");
+		perror("->ERROR EN BIND");
 		return 1;
 	}
 
 	//Listar
 	if (listen(listenfd, 10) < 0)
 	{
-		perror("Error en listen");
+		perror("->ERROR EN LISTEN");
 		return 1;
 	}
 
-	printf("Servidor Iniciado\n");
-	printf("Host: 127.0.0.1\n");
-	printf("Port: %d\n",port);
+	printf("\n\n    SERVIDOR INICIADO\n");
+	printf("    HOST: 127.0.0.1\n");
+	printf("    PORT: %d\n",port);
 
 	//Aceptar clientes
 	while(1)
@@ -332,9 +328,9 @@ int main(int argc, char *argv[])
 		//Solo permite limiteMaximo en una session
 		if((cli_count+1) == limiteMaximo)
 		{
-			printf("Chat lleno!\n");
-			printf("Notificaremos cuando un usuario salga\n");
-			printf("para que vuelvas a intentar conectarte\n");
+			printf("->CHAT LLENO!\n");
+			printf("->Notificaremos cuando un usuario salga\n");
+			printf("->para que vuelvas a intentar conectarte\n");
 			close(connfd);
 			continue;
 		}

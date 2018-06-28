@@ -1,12 +1,12 @@
-all : chat_server client
+all : server client
 
 CPPFLAGS = -g -I.
 
-chat_server : chat_server.c
-	cc -g -I. chat_server.c -O2 -lpthread -o chat_server
+server : server.c
+	cc -g -I. server.c -w -O2 -lpthread -o server.o
 
 client : client.c
-	cc -g -I. client.c -lpthread -o client
+	cc -g -I. client.c -lpthread -o client.o
 
 clean :
-	rm client chat_server
+	rm client.o server.o

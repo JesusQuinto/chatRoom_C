@@ -1,29 +1,46 @@
-Chat Server
-=
+# Sala de chat
 
-Simple chatroom in C. This project demonstrates the basic use of sockets. There is currently no client available but any telnet client will do. Just connect to the server on the specified port and address. By default port 5000 is used. The project was intended to run on Linux and Unix based systems. However with minor changes you'd be able to run it on Windows as well.
+*Sala de chat* hecha en C que con la implementacion de **sockets** se logra crear una sala de chat, en la cual distintos **clientes** se comunican a travéz de un **servidor**, se implementa el manejo de **señales** para ignorar *SIGPIPE* señales, y el uso de **hilos** en el servidor para procesar multiple de usuarios a la vez, lo cual nos genera una **seccion critica** la cual terminamos manejando mendiante un **semaforo**.
 
-## Build
-Run GNU make in the repository
+## Este sofware fue probado en Ordenador:
+
+* Intel® Core™ i3-4030U CPU @ 1.90GHz × 4
+* 64bits.
+* RAM 7,7 GiB
+* GNU/LINUX Ubuntu 16.04  
+
+## Construir
+
+Corra make
 `make`
 
-Then start
-`./chat_server`
+## Remover Ejecutables
 
-## Features
-* Accept multiple client (max 100)
-* Name and rename users
-* Send private messages
+Corra make clean
+`make clean`
 
-## Chat commands
+## Ejecutar
 
-| Command       | Parameter             |                                     |
+Ejecutar servidor
+`./server [port]`
+
+Ejecutar cliente
+`./client [port]`
+
+## Caracteristicas
+
+* Multiples cliente chatenado al mismo tiempo
+* Personalizacion del nombre de usuario
+* Capacidad para abandonar el chat
+* Mostrar la Cantidad de clientes activos
+
+## Comandos
+
+| Comando       | Parametros            | Función                             |
 | ------------- | --------------------- | ----------------------------------- |
-| \QUIT         |                       | Leave the chatroom                  |
-| \PING         |                       | Test connection, responds with PONG |
-| \NAME         | [nickname]            | Change nickname                     |
-| \PRIVATE      | [reference] [message] | Send private message                |
-| \ACTIVE       |                       | Show active clients                 |
-| \HELP         |                       | Show this help                      |
+| #SALIR        |                       | Salir del chat                      |
+| #NOMBRE       | [nuevo-nombre]        | Cambiar nombre                      |
+| #ACTIVOS      |                       | Show active clients                 |
+| #AYUDA        |                       | Mostrar Ayuda                       |
 
-For the SSL version of the chat server check out the [Chat Server Secure](https://github.com/yorickdewid/Chat-Server-Secure "Chat Server Secure") repository.
+
